@@ -11,7 +11,10 @@ go mod tidy
 
 # Build the application
 echo "Building application..."
-go build -o OpenRouterProxy
+go build -o OpenRouterProxy app.go || {
+    echo "Build failed!"
+    exit 1
+}
 
 # Create application bundle structure
 echo "Creating application bundle..."
@@ -29,6 +32,25 @@ mkdir -p "$RESOURCES_DIR"
 
 # Copy binary to MacOS directory
 cp OpenRouterProxy "$MACOS_DIR/"
+
+# Create a placeholder icon
+echo "Creating placeholder icon..."
+# Save the PNG from app.go to a temporary file
+cat > temp_icon.png << 'EOF'
+$(xxd -p -c 256 getIcon | xxd -r -p)
+EOF
+
+# Create an iconset directory
+mkdir -p OpenRouterProxy.iconset
+# Copy the PNG to multiple sizes (simplified for placeholder)
+cp temp_icon.png OpenRouterProxy.iconset/icon_16x16.png
+cp temp_icon.png OpenRouterProxy.iconset/icon_32x32.png
+cp temp_icon.png OpenRouterProxy.iconset/icon_128x128.png
+cp temp_icon.png OpenRouterProxy.iconset/icon_256x256.png
+# Convert to icns
+iconutil -c icns OpenRouterProxy.iconset -o "$RESOURCES_DIR/AppIcon.icns"
+# Clean up temporary files
+rm -rf OpenRouterProxy.iconset temp_icon.png
 
 # Create Info.plist
 cat > "$CONTENTS_DIR/Info.plist" << EOF
@@ -64,16 +86,12 @@ cat > "$CONTENTS_DIR/Info.plist" << EOF
 </plist>
 EOF
 
-# Create a simple icon (placeholder)
-# In a real application, you would use a proper icon file
-echo "Note: Using placeholder icon. Replace with a proper icon for production."
-
-# Create a DMG (optional)
+# Create a DMG
 echo "Creating DMG..."
 if command -v create-dmg &> /dev/null; then
     create-dmg \
         --volname "OpenRouterProxy" \
-        --volicon "OpenRouterProxy.app/Contents/Resources/AppIcon.icns" \
+        --volicon "$RESOURCES_DIR/AppIcon.icns" \
         --window-pos 200 120 \
         --window-size 600 400 \
         --icon-size 100 \
@@ -81,14 +99,19 @@ if command -v create-dmg &> /dev/null; then
         --hide-extension "OpenRouterProxy.app" \
         --app-drop-link 425 190 \
         "OpenRouterProxy.dmg" \
-        "OpenRouterProxy.app"
+        "$APP_NAME" || {
+            echo "DMG creation failed!"
+            exit 1
+        }
 else
     echo "create-dmg not found. Skipping DMG creation."
     echo "To create a DMG, install create-dmg: brew install create-dmg"
+    exit 1
 fi
 
 echo "Build complete!"
 echo "Application bundle created at: $APP_NAME"
-if [ -f "OpenRouterProxy.dmg" ]; then
-    echo "DMG created at: OpenRouterProxy.dmg"
-fi
+echo "DMG created at: OpenRouterProxy.dmg"
+
+# Clean up temporary binary
+rm -f OpenRouterProxy
