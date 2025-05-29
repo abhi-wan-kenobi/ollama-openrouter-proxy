@@ -3,8 +3,11 @@ module ollama-to-openrouter-proxy
 go 1.23
 
 require (
+	github.com/getlantern/systray v1.2.2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/sashabaranov/go-openai v1.36.0
+	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
+	github.com/zalando/go-keyring v0.2.3
 )
 
 require (
