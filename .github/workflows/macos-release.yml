@@ -3,7 +3,7 @@ name: Build and Release macOS App
 on:
   push:
     tags:
-      - 'v0.1.1-alpha'
+      - 'v*.*.*' # Matches any semantic version tag (e.g., v0.1.1, v0.1.1-alpha)
   workflow_dispatch:
 
 jobs:
@@ -11,10 +11,10 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # Updated to latest version
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5 # Updated to latest version
         with:
           go-version: '1.21'
 
@@ -25,21 +25,24 @@ jobs:
         run: |
           chmod +x build_macos.sh
           ./build_macos.sh
+        env:
+          GOOS: darwin
+          GOARCH: amd64
 
       - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2 # Updated to latest version
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: |
-            OpenRouterProxy.dmg
+          files: OpenRouterProxy.dmg
           draft: false
-          prerelease: false
+          prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload DMG as Artifact (for manual releases)
+      - name: Upload DMG as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: OpenRouterProxy-macOS
           path: OpenRouterProxy.dmg
+          retention-days: 7
