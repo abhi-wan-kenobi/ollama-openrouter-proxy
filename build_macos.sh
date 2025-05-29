@@ -9,9 +9,9 @@ echo "Building OpenRouter Proxy for macOS..."
 echo "Updating dependencies..."
 go mod tidy
 
-# Build the application
+# Build the application with macOS-specific tags
 echo "Building application..."
-go build -o OpenRouterProxy app.go || {
+go build -tags "darwin" -o OpenRouterProxy app.go || {
     echo "Build failed!"
     exit 1
 }

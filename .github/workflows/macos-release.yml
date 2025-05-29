@@ -3,7 +3,7 @@ name: Build and Release macOS App
 on:
   push:
     tags:
-      - 'v*.*.*' # Matches semantic version tags
+      - 'v*.*.*'
   workflow_dispatch:
 
 jobs:
@@ -21,6 +21,11 @@ jobs:
       - name: Install create-dmg
         run: brew install create-dmg
 
+      - name: Install Xcode dependencies
+        run: |
+          sudo xcode-select --switch /Applications/Xcode.app
+          xcodebuild -version
+
       - name: Build macOS App
         run: |
           chmod +x build_macos.sh
@@ -28,6 +33,7 @@ jobs:
         env:
           GOOS: darwin
           GOARCH: amd64
+          CGO_ENABLED: 1 # Explicitly enable CGO
 
       - name: Verify DMG exists
         run: |
